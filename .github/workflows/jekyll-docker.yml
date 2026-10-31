@@ -18,20 +18,18 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
-
-      - name: Check files
-        run: ls -la
+          java-version: 17
 
       - name: Prepare web folder
         run: |
           mkdir www
           cp index.html questions.js firebase-config.js icon.jpg www/
+          cp questions-*.js www/ 2>/dev/null || true
 
       - name: Install Capacitor and add Android
         run: |
           npm init -y
-          npm i @capacitor/core @capacitor/cli @capacitor/android
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           npx cap init "مليونير المعرفة" com.knowledge.millionaire --web-dir www
           npx cap add android
 
@@ -42,7 +40,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Find APK
         run: find android -name "*.apk"
