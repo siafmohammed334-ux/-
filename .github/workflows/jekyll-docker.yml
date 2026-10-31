@@ -23,8 +23,8 @@ jobs:
       - name: Prepare web folder
         run: |
           mkdir www
-          cp index.html questions.js firebase-config.js icon.jpg www/
-          cp questions-*.js www/ 2>/dev/null || true
+          cp index.html firebase-config.js icon.jpg www/
+          cp questions*.js www/
 
       - name: Install Capacitor and add Android
         run: |
@@ -32,6 +32,26 @@ jobs:
           npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           npx cap init "مليونير المعرفة" com.knowledge.millionaire --web-dir www
           npx cap add android
+
+      - name: Set app icon
+        run: |
+          pip install pillow
+          python - <<'EOF'
+          from PIL import Image, ImageDraw
+          import os, shutil
+          im = Image.open("icon.jpg").convert("RGBA").crop((117,127,1932,1950)).resize((1024,1024))
+          m = Image.new("L",(1024,1024),0)
+          ImageDraw.Draw(m).rounded_rectangle((0,0,1023,1023),radius=230,fill=255)
+          im.putalpha(m)
+          base = "android/app/src/main/res/"
+          for d, s in {"mdpi":48,"hdpi":72,"xhdpi":96,"xxhdpi":144,"xxxhdpi":192}.items():
+              p = base + "mipmap-" + d + "/"
+              os.makedirs(p, exist_ok=True)
+              r = im.resize((s,s), Image.LANCZOS)
+              for n in ("ic_launcher.png","ic_launcher_round.png","ic_launcher_foreground.png"):
+                  r.save(p + n)
+          shutil.rmtree(base + "mipmap-anydpi-v26", ignore_errors=True)
+          EOF
 
       - name: Sync web files
         run: npx cap sync android
@@ -41,9 +61,6 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
-
-      - name: Find APK
-        run: find android -name "*.apk"
 
       - uses: actions/upload-artifact@v4
         with:
